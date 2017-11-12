@@ -17,6 +17,7 @@
 
 
 #include <Gamebuino-Meta.h>
+#include <Gamebuino-EEPROM.h>
 
 //prototypes
 void popup(const __FlashStringHelper* text, uint8_t duration);
@@ -1701,6 +1702,8 @@ class Crate :
             case (SCORETHRESHOLD_3):
               if (unlockedMaps < 1) {
                 unlockedMaps = 1;
+                world.addScore(player.score);
+                saveEEPROM();
                 world.setMap(unlockedMaps);
                 initGame();
                 popup("NEW MAP UNLOCKED!", 40);
@@ -1745,7 +1748,9 @@ class Crate :
               break;
             case (SCORETHRESHOLD_5):
               if (unlockedMaps < 2) {
+                world.addScore(player.score);
                 unlockedMaps = 2;
+                saveEEPROM();
                 world.setMap(unlockedMaps);
                 initGame();
                 popup("NEW MAP UNLOCKED!", 40);
@@ -1791,6 +1796,8 @@ class Crate :
             case (SCORETHRESHOLD_5):
               if (unlockedMaps < 3) {
                 unlockedMaps = 3;
+                world.addScore(player.score);
+                saveEEPROM();
                 world.setMap(unlockedMaps);
                 initGame();
                 popup("NEW MAP UNLOCKED!", 40);
@@ -1818,6 +1825,8 @@ class Crate :
             case (SCORETHRESHOLD_5):
               if (unlockedMaps < 4) {
                 unlockedMaps = 4;
+                world.addScore(player.score);
+                saveEEPROM();
                 world.setMap(unlockedMaps);
                 initGame();
                 popup("LAST MAP UNLOCKED!", 40);
@@ -1845,6 +1854,7 @@ Crate crate;
 ///////////////////////////////////////////// SETUP
 void setup() {
   gb.begin();
+  EEPROM.begin(256);
   loadEEPROM();
   gb.pickRandomSeed();
   world.chooseMap();
@@ -1856,7 +1866,6 @@ void loop() {
     gb.display.setCursor(0, 0);
     gb.lights.clear();
     if (gb.buttons.pressed(BUTTON_C)) {
-
       world.addScore(player.score);
       saveEEPROM();
       world.chooseMap();
@@ -1866,7 +1875,6 @@ void loop() {
     crate.update();
     player.update();
     enemiesEngine.update();
-    saveEEPROM(); //it checks if the values have changed before writting so it won't wear out the EEPROM
 
     //camera smoothing
     //int x = (player.x + player.getWidth()/2)/SCALE - gb.display.width()/2;
@@ -1975,7 +1983,9 @@ void drawAll() {
   }
   gb.display.setColor(WHITE, BLACK);
   gb.display.println(player.score);
+
   updatePopup();
+
   /*gb.display.cursorX = 0;
     gb.display.cursorY = 8;
     gb.display.setColor(0x00FF);
@@ -1984,51 +1994,58 @@ void drawAll() {
 }
 
 void loadEEPROM() {
-  /*if (EEPROMreadInt(0) != EEPROM_TOKEN) {
+  if (EEPROMreadInt(0) != EEPROM_TOKEN) {
     cleanEEPROM();
     return;
-    }
-    //load score for each map
-    for (int i = 0; i < NUMMAPS; i++) {
+  }
+  //load score for each map
+  for (int i = 0; i < NUMMAPS; i++) {
     score[i] = EEPROMreadInt(i * 2 + EEPROM_SCORE_OFFSET);
-    }
-    unlockedWeapons = EEPROM.read(EEPROM_WEAPONS_OFFSET);
-    unlockedMaps = EEPROM.read(EEPROM_MAPS_OFFSET);
-    world.mapNumber = unlockedMaps; //select the last unlocked map by */
+  }
+  unlockedWeapons = EEPROM.read(EEPROM_WEAPONS_OFFSET);
+  unlockedMaps = EEPROM.read(EEPROM_MAPS_OFFSET);
+  world.mapNumber = unlockedMaps; //select the last unlocked map by
 }
 
 void saveEEPROM() {
-  /*EEPROMwriteInt(0, EEPROM_TOKEN);
-    //save score for each map
-    for (byte i = 0; i < NUMMAPS; i++) {
+  gb.tft.setCursor(0,0);
+  gb.tft.setFontSize(2);
+  gb.tft.print("SAVING");
+  gb.tft.setFontSize(1);
+  if (EEPROM.read(0) != EEPROM_TOKEN) {
+    cleanEEPROM();
+    EEPROMwriteInt(0, EEPROM_TOKEN);
+  }
+  //save score for each map
+  for (byte i = 0; i < NUMMAPS; i++) {
     if (EEPROMreadInt(i * 2 + EEPROM_SCORE_OFFSET) < score[i]) {
       EEPROMwriteInt(i * 2 + EEPROM_SCORE_OFFSET, score[i]);
     }
-    }
-    if (EEPROM.read(EEPROM_WEAPONS_OFFSET) < unlockedWeapons) {
+  }
+  if (EEPROM.read(EEPROM_WEAPONS_OFFSET) < unlockedWeapons) {
     EEPROM.write(EEPROM_WEAPONS_OFFSET, unlockedWeapons);
-    }
-    if (EEPROM.read(EEPROM_MAPS_OFFSET) < unlockedMaps) {
+  }
+  if (EEPROM.read(EEPROM_MAPS_OFFSET) < unlockedMaps) {
     EEPROM.write(EEPROM_MAPS_OFFSET, unlockedMaps);
-    }*/
+  }
 }
 
 unsigned int EEPROMreadInt(unsigned int i) {
-  /*int value = EEPROM.read(i + 1) & 0x00FF; //LSB
-    value += (EEPROM.read(i) << 8) & 0xFF00; //MSB
-    return value;*/
+  int value = EEPROM.read(i + 1) & 0x00FF; //LSB
+  value += (EEPROM.read(i) << 8) & 0xFF00; //MSB
+  return value;
 }
 
 void EEPROMwriteInt(unsigned int i, unsigned int value) {
-  /* EEPROM.write(i + 1, value & 0x00FF); //LSB
-    EEPROM.write(i, (value >> 8) & 0x00FF); //MSB*/
+  EEPROM.write(i + 1, value & 0x00FF); //LSB
+  EEPROM.write(i, (value >> 8) & 0x00FF); //MSB
 }
 
 void cleanEEPROM() {
-  /*for (int i = 0; i < 1024; i++) {
+  for (int i = 0; i < 256; i++) {
     if (EEPROM.read(i))
       EEPROM.write(i, 0);
-    }*/
+  }
 }
 
 
