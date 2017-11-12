@@ -343,6 +343,12 @@ class World {
               }
             }
             gb.display.drawBitmap(x * SPRITE_SIZE - cameraX - offset, y * SPRITE_SIZE - cameraY, bitmap, NOROT, flip);
+          } else {
+            if (y == (getHeight() / SPRITE_SIZE / SCALE - 1)) { //bottom line
+              gb.display.setColor(RED);
+              gb.display.fillRect(x * SPRITE_SIZE - cameraX, y * SPRITE_SIZE + 3 - cameraY, SPRITE_SIZE, SPRITE_SIZE - 3);
+              gb.display.setColor(BLACK, WHITE);
+            }
           }
         }
       }
@@ -1455,6 +1461,10 @@ class Enemy :
             y = 0;
             vx = dir * 20;
             //gb.sound.playPattern(enemy_felt_sound, 2);
+            gb.sound.playCancel();
+            gb.lights.setColor(RED);
+            gb.lights.fillRect(0, 3, 2, 1);
+            gb.lights.setColor(BLACK, WHITE);
           }
           else {
             active = false;
