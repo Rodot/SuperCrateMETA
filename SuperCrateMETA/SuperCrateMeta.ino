@@ -1473,7 +1473,20 @@ class Enemy :
       }
     }
     void draw() {
+      boolean angry = (abs(vx) > 10) && (health > 0);
+      if(angry){
+        gb.display.setColor(RED);
+      } else {
+        gb.display.setColor(BLACK);
+      }
       if (isOffScreen()) {
+        if(angry){ //show angry enemies marker on screen border
+          int mW = getWidth()/SCALE;
+          int mH = getHeight()/SCALE;
+          int mX = constrain(toScreenX(x),(- mW + 2),gb.display.width() - 2);
+          int mY = constrain(toScreenY(y),(- mH + 2),gb.display.height() - 2);
+          gb.display.fillRect(mX, mY, mW, mH);
+        }
         return;
       }
       int flip = (dir > 0) ? NOFLIP : FLIPH;
@@ -1593,8 +1606,6 @@ class EnemiesEngine {
     void draw() {
       for (byte i = 0; i < NUMENEMIES; i++) {
         if (enemies[i].active) {
-          if ((abs(enemies[i].vx) > 10) && (enemies[i].health > 0)) //angry enemy
-            gb.display.setColor(RED);
           enemies[i].draw();
           gb.display.setColor(BLACK);
         }
