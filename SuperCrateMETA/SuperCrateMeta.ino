@@ -1650,6 +1650,7 @@ class Crate :
         //add a random value to the weapon type inferior to the number of weapons
         //to avoid picking the same weapon
         player.weapon.subtype = (player.weapon.subtype + random(1, unlockedWeapons + 1)) % (unlockedWeapons + 1);
+        /*
         switch (player.weapon.subtype) {
           case W_CLUB :
             popup("CLUB");
@@ -1691,6 +1692,7 @@ class Crate :
             popup("MINE");
             break;
         }
+        */
         if (world.mapNumber == 0) {
           switch (player.score) {
             case (SCORETHRESHOLD_1):
