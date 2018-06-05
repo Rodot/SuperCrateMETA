@@ -244,6 +244,8 @@ const byte blackWall[] PROGMEM = {
   8, 6, 0xF4, 0xFC, 0xBC, 0xF8, 0xFC, 0xDC,
 };
 
+const int NUM_OF_COLORS = 7;
+const Color colors[NUM_OF_COLORS] = {PINK, BLUE, DARKBLUE, GREEN, DARKGRAY, PURPLE, BROWN};
 
 class World {
   public:
@@ -1384,7 +1386,10 @@ class Player :
           frame = 1;
         }
       }
+      if (gb.metaMode.isActive() && gb.frameCount / 4 % 2)
+        gb.display.setColor(ORANGE);
       gb.display.drawBitmap(toScreenX(x) - 1, toScreenY(y), playerBitmap[frame], NOROT, flip);
+      gb.display.setColor(BLACK);
       weapon.draw();
     }
 };
@@ -1418,6 +1423,7 @@ class Enemy :
     byte subtype;
     boolean active;
     int health;
+    Color color = BLACK;
     int getWidth() {
       return (subtype == E_SMALL) ? 48 : 72;
     }
@@ -1474,17 +1480,17 @@ class Enemy :
     }
     void draw() {
       boolean angry = (abs(vx) > 10) && (health > 0);
-      if(angry){
+      if (angry) {
         gb.display.setColor(RED);
       } else {
-        gb.display.setColor(BLACK);
+        gb.display.setColor(color);
       }
       if (isOffScreen()) {
-        if(angry){ //show angry enemies marker on screen border
-          int mW = getWidth()/SCALE;
-          int mH = getHeight()/SCALE;
-          int mX = constrain(toScreenX(x),(- mW + 2),gb.display.width() - 2);
-          int mY = constrain(toScreenY(y),(- mH + 2),gb.display.height() - 2);
+        if (angry) { //show angry enemies marker on screen border
+          int mW = getWidth() / SCALE;
+          int mH = getHeight() / SCALE;
+          int mX = constrain(toScreenX(x), (- mW + 2), gb.display.width() - 2);
+          int mY = constrain(toScreenY(y), (- mH + 2), gb.display.height() - 2);
           gb.display.fillRect(mX, mY, mW, mH);
         }
         return;
@@ -1534,6 +1540,9 @@ class EnemiesEngine {
           enemies[i].y = 0;
           enemies[i].vx = (random(0, 2) * 20) - 10;
           enemies[i].vy = 0;
+          enemies[i].color = BLACK;
+          if (gb.metaMode.isActive())
+            enemies[i].color = colors[random(0, NUM_OF_COLORS)];
           return;
         }
       }
@@ -1565,6 +1574,9 @@ class EnemiesEngine {
             enemies[i].health -= bullets[j].getDamage();
             //make the ennemy jump when dead
             if (enemies[i].health <= 0) {
+              if (gb.metaMode.isActive())
+                player.weapon.subtype = (player.weapon.subtype + random(1, unlockedWeapons + 1)) % (unlockedWeapons + 1);
+
               int dir;
               if (bullets[j].subtype == W_EXPLOSION) { //fly away from the explosive
                 dir = (((enemies[i].x + enemies[i].getWidth() / 2) - (bullets[j].x + bullets[j].getWidth() / 2)) > 0) ? 1 : -1;
@@ -1595,6 +1607,7 @@ class EnemiesEngine {
         //they won't spaw faster than every 10 frames (0.5 s)
         nextSpawnCount = map(player.score, 0, 50, 60, 30);
         nextSpawnCount = max(nextSpawnCount, 10);
+        if (gb.metaMode.isActive()) nextSpawnCount /= 2;
         addEnemy();
       }
       for (byte i = 0; i < NUMENEMIES; i++) {
@@ -1662,7 +1675,7 @@ class Crate :
         //to avoid picking the same weapon
         player.weapon.subtype = (player.weapon.subtype + random(1, unlockedWeapons + 1)) % (unlockedWeapons + 1);
         /*
-        switch (player.weapon.subtype) {
+          switch (player.weapon.subtype) {
           case W_CLUB :
             popup("CLUB");
             break;
@@ -1702,7 +1715,7 @@ class Crate :
           case W_MINE :
             popup("MINE");
             break;
-        }
+          }
         */
         if (world.mapNumber == 0) {
           switch (player.score) {
@@ -2031,7 +2044,7 @@ void loadEEPROM() {
 }
 
 void saveEEPROM() {
-  gb.tft.setCursor(0,0);
+  gb.tft.setCursor(0, 0);
   gb.tft.setFontSize(2);
   gb.tft.print("SAVING");
   gb.tft.setFontSize(1);
@@ -2118,7 +2131,7 @@ void drawCompass() {
   int x = (crate.x + crate.getWidth() / 2 - player.x - player.getWidth() / 2) / SCALE;
   int y = (crate.y + crate.getWidth() / 2 - player.y - player.getHeight() / 2) / SCALE;
   int dist = sqrt(x * x + y * y);
-  if (dist > 20  ) {
+  if (dist > 20) {
     int dx = toScreenX(player.x + player.getWidth() / 2)   + (16 * x / dist);
     int dy = toScreenY(player.y + player.getHeight() / 2)  + (16 * y / dist);
     //gb.display.setColor(GRAY);
